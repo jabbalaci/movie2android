@@ -1,0 +1,2 @@
+* Keep the original aspect ratio but make sure that the
+  resized resolution respects the values set in the config part.
