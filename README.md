@@ -12,6 +12,7 @@ Get a static FFmpeg build from <http://ffmpeg.gusari.org/static/>.
 This mini project was inspired by the LUD-Media-Converter
 (<https://github.com/kunaldeo/LUD-Media-Converter>).
 
+
 Usage:
 ------
 
@@ -24,3 +25,9 @@ by adjusting the `config` dictionary in the source.
 
 You can also pass *several* parameters to the script and they
 will be processed one by one in a queue.
+
+
+Contributions:
+--------------
+
+* Bulkan Evcimen (<https://github.com/bulkan>)

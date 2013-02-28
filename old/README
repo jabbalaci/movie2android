@@ -1,0 +1,2 @@
+In this version we used jinja2 for formatting.
+This dependency was removed in newer versions.

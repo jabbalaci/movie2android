@@ -32,6 +32,7 @@ will be processed one by one in a queue.
 import os
 import sys
 import termcolor
+from jinja2 import Environment
 
 
 config = {
@@ -42,10 +43,12 @@ config = {
     'threads': '2'
 }
 
-command = """{ffmpeg} -i %(input)s -codec:v libx264 -quality good -cpu-used 0
--b:v {bitrate} -profile:v baseline -level 30 -y -maxrate 2000k
--bufsize 2000k -vf scale={width}:{height} -threads {threads} -codec:a libvo_aacenc
--b:a 128k %(output)s""".replace('\n', ' ').format(**config)
+command = """{{ ffmpeg }} -i {input} -codec:v libx264 -quality good -cpu-used 0
+-b:v {{ bitrate }} -profile:v baseline -level 30 -y -maxrate 2000k
+-bufsize 2000k -vf scale={{ width }}:{{ height }} -threads {{ threads }} -codec:a libvo_aacenc
+-b:a 128k {output}""".replace('\n', ' ')
+
+command = Environment().from_string(command).render(config)
 
 
 def resize(fname):
@@ -60,7 +63,7 @@ def resize(fname):
         print termcolor.colored('Warning: the file {0} exists!'.format(output), "red")
         return
     # else
-    cmd = command % {'input': fname, 'output': output}
+    cmd = command.format(input=fname, output=output)
     print termcolor.colored(cmd, "green")
     os.system(cmd)
 
