@@ -58,9 +58,9 @@ def resize(fname):
     fileBaseName = os.path.splitext(fname)[0]
     output = fileBaseName+'.mp4'
     if os.path.isfile(output):
-        output = "{}-resized.mp4".format(fileBaseName)
+        output = "{0}-resized.mp4".format(fileBaseName)
     if os.path.isfile(output):
-        print termcolor.colored('Warning: the file {} exists!'.format(output), "red")
+        print termcolor.colored('Warning: the file {0} exists!'.format(output), "red")
         return
     # else
     cmd = command.format(input=fname, output=output)
@@ -77,7 +77,7 @@ def main(movies):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: {} <movie>".format(sys.argv[0])
+        print "Usage: {0} <movie>".format(sys.argv[0])
         sys.exit(1)
     else:
         main(sys.argv[1:])
