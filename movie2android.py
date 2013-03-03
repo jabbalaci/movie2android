@@ -52,10 +52,10 @@ config = {
 AUDIO_CODEC_DEFAULT = 'libvo_aacenc'
 AUDIO_CODEC_FAILSAFE = 'copy'    # if the previous fails
 
-command = """{ffmpeg} -i %(input)s -codec:v libx264 -quality good -cpu-used 0
+command = """{ffmpeg} -i \"%(input)s\" -codec:v libx264 -quality good -cpu-used 0
 -b:v {bitrate} -profile:v baseline -level 30 -y -maxrate 2000k
 -bufsize 2000k -vf scale={width}:{height} -threads {threads} -codec:a %(audio_codec)s
--b:a 128k %(output)s""".replace('\n', ' ').format(**config)
+-b:a 128k \"%(output)s\"""".replace('\n', ' ').format(**config)
 
 audio_codec_problem = "Warning! There was a problem with the audio codec and the conversion failed. " + \
     "Retrying another method..."
