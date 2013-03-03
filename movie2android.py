@@ -60,6 +60,13 @@ command = """{ffmpeg} -i \"%(input)s\" -codec:v libx264 -quality good -cpu-used 
 audio_codec_problem = "Warning! There was a problem with the audio codec and the conversion failed. " + \
     "Retrying another method..."
 
+
+def call_and_get_exit_code(cmd):
+    process = Popen(shlex.split(cmd), stdout=PIPE)
+    process.communicate()
+    return process.wait()
+
+
 def resize(fname):
     """
     Resize the current video file with ffmpeg.
@@ -74,17 +81,15 @@ def resize(fname):
     # else
     cmd = command % {'input': fname, 'output': output, 'audio_codec': AUDIO_CODEC_DEFAULT}
     print termcolor.colored(cmd, "green")
-    process = Popen(shlex.split(cmd), stdout=PIPE)
-    process.communicate()
-    exit_code = process.wait()
-    if exit_code != 0:
+    exit_code = call_and_get_exit_code(cmd)
+    if exit_code == 0:
+        print termcolor.colored("Success!", "green")
+    else:
         print termcolor.colored(audio_codec_problem, "red")
         os.unlink(output)
         cmd = command % {'input': fname, 'output': output, 'audio_codec': AUDIO_CODEC_FAILSAFE}
         print termcolor.colored(cmd, "green")
-        process = Popen(shlex.split(cmd), stdout=PIPE)
-        process.communicate()
-        exit_code = process.wait()
+        exit_code = call_and_get_exit_code(cmd)
         if exit_code == 0:
             print termcolor.colored("Success!", "green")
 
