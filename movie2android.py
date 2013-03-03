@@ -27,6 +27,10 @@ by adjusting the `config` dictionary in the source.
 
 You can also pass *several* parameters to the script and they
 will be processed one by one in a queue.
+
+Accepted switches:
+
+    -threads:<n>            default: -threads:2
 """
 
 __author__ = "Laszlo Szathmary (jabba.laci@gmail.com)"
@@ -40,8 +44,10 @@ import sys
 import termcolor
 import shlex
 from subprocess import Popen, PIPE
+import re
+import pprint
 
-
+# all values are strings (even numeric values)
 config = {
     'ffmpeg': '/opt/ffmpeg.static/ffmpeg',
     'bitrate': '600k',
@@ -94,10 +100,34 @@ def resize(fname):
             print termcolor.colored("Success!", "green")
 
 
-def main(movies):
-    """process each argument"""
-    for movie in movies:
-        resize(movie)
+def check_switches(args):
+    """
+    Process arguments and if there is a switch among them, modify
+    the config part accordingly.
+
+    Return value: argument list without switches.
+    """
+    global config
+    #
+    copy = []
+    for e in args:
+        m = re.search(r'^-threads:(\d+)$', e)
+        if m:
+            config['threads'] = m.group(1)
+        else:
+            copy.append(e)
+    #
+    return copy
+
+
+def main(args):
+    """
+    process each argument
+    """
+    args = check_switches(args)
+    #
+    for arg in args:
+        resize(arg)
 
 #############################################################################
 
