@@ -45,7 +45,7 @@ import termcolor
 import shlex
 from subprocess import Popen, PIPE
 import re
-import pprint
+#import pprint
 
 # all values are strings (even numeric values)
 config = {
@@ -53,10 +53,10 @@ config = {
     'bitrate': '600k',
     'width': '480',
     'height': '320',
-    'threads': '2'
+    'threads': '2',
+    'audio_codec': 'libvo_aacenc',
+    'audio_codec_failsafe': 'aac -strict experimental',
 }
-AUDIO_CODEC_DEFAULT = 'libvo_aacenc'
-AUDIO_CODEC_FAILSAFE = 'copy'    # if the previous fails
 
 command = """{ffmpeg} -i \"%(input)s\" -codec:v libx264 -quality good -cpu-used 0
 -b:v {bitrate} -profile:v baseline -level 30 -y -maxrate 2000k
@@ -85,7 +85,7 @@ def resize(fname):
         print termcolor.colored('Warning: the file {0} exists!'.format(output), "red")
         return
     # else
-    cmd = command % {'input': fname, 'output': output, 'audio_codec': AUDIO_CODEC_DEFAULT}
+    cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec']}
     print termcolor.colored(cmd, "green")
     exit_code = call_and_get_exit_code(cmd)
     if exit_code == 0:
@@ -93,7 +93,7 @@ def resize(fname):
     else:
         print termcolor.colored(audio_codec_problem, "red")
         os.unlink(output)
-        cmd = command % {'input': fname, 'output': output, 'audio_codec': AUDIO_CODEC_FAILSAFE}
+        cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec_failsafe']}
         print termcolor.colored(cmd, "green")
         exit_code = call_and_get_exit_code(cmd)
         if exit_code == 0:
