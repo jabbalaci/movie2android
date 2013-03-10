@@ -56,7 +56,9 @@ import termcolor
 import shlex
 from subprocess import Popen, PIPE
 import re
-#import pprint
+from texttable import Texttable
+import time
+import datetime
 
 STATIC_BUILD = 1
 OWN_COMPILATION = 2
@@ -90,37 +92,69 @@ audio_codec_problem = "Warning! There was a problem with the audio codec and the
     "Retrying another method..."
 
 
+class Timer(object):
+
+    def __enter__(self):
+        self.__start = time.time()
+
+    def __exit__(self, type, value, traceback): #@ReservedAssignment
+        # Error handling here
+        self.__finish = time.time()
+
+    def elapsed_time(self):
+        return self.__finish - self.__start
+
+
 def call_and_get_exit_code(cmd):
     process = Popen(shlex.split(cmd), stdout=PIPE)
     process.communicate()
     return process.wait()
 
 
+def frame(fname):
+    size = len(fname)
+    horizontal = '+'+'-'*(size+2)+'+'
+    print horizontal
+    print '| '+fname+' |'
+    print horizontal
+
+
 def resize(fname):
     """
     Resize the current video file with ffmpeg.
     """
+    if not os.path.isfile(fname):
+        print termcolor.colored("Warning: the file {0} doesn't exist!".format(fname), "red")
+        return False
+    # else
+
     fileBaseName = os.path.splitext(fname)[0]
     output = fileBaseName+'.mp4'
     if os.path.isfile(output):
         output = "{0}-resized.mp4".format(fileBaseName)
     if os.path.isfile(output):
         print termcolor.colored('Warning: the file {0} exists!'.format(output), "red")
-        return
+        return False
     # else
     cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec']}
     print termcolor.colored(cmd, "green")
+    frame(fname)
     exit_code = call_and_get_exit_code(cmd)
     if exit_code == 0:
         print termcolor.colored("Success!", "green")
+        return True
     else:
         print termcolor.colored(audio_codec_problem, "red")
         os.unlink(output)
         cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec_failsafe']}
         print termcolor.colored(cmd, "green")
+        frame(fname)
         exit_code = call_and_get_exit_code(cmd)
         if exit_code == 0:
             print termcolor.colored("Success!", "green")
+            return True
+        else:
+            return False
 
 
 def check_switches(args):
@@ -147,10 +181,27 @@ def main(args):
     """
     process each argument
     """
+    table = Texttable()
+    table.set_cols_align(["r", "r", "r"])
+    rows = [["Number", "File Name", "Elapsed Time (sec.)"]]
+    total_time = 0.0
+
     args = check_switches(args)
     #
     for arg in args:
-        resize(arg)
+        timer = Timer()
+        with timer:
+            status = resize(arg)
+        #
+        rows.append([len(rows), arg, timer.elapsed_time() if status else "failed"])
+        #
+        t = rows[-1][-1]
+        if isinstance(t, float):
+            total_time += t
+
+    table.add_rows(rows)
+    print table.draw()
+    print 'Total time: {0} (H:MM:SS)'.format(str(datetime.timedelta(seconds=int(round(total_time)))))
 
 #############################################################################
 
