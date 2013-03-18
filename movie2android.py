@@ -29,7 +29,7 @@ This mini project was inspired by the LUD-Media-Converter
 Usage:
 ------
 
-    ./movie2android.py movie.avi
+    ./movie2android.py movie.avi [movie2.avi]...
 
 It will resize the movie and produce a `movie.mp4` file.
 If the input was called `movie.mp4`, the output will be
@@ -45,23 +45,20 @@ Accepted switches:
 """
 
 __author__ = "Laszlo Szathmary (jabba.laci@gmail.com)"
-__version__ = "0.1.2"
-__date__ = "20130305"
+__version__ = "0.1.3"
+__date__ = "20130318"
 __copyright__ = "Copyright (c) 2013 Laszlo Szathmary"
 __license__ = "GPL"
 
 import os
 import sys
 import termcolor
-import shlex
-from subprocess import Popen, PIPE
 import re
 from texttable import Texttable
-import time
 import datetime
+import utils
 
-STATIC_BUILD = 1
-OWN_COMPILATION = 2
+STATIC_BUILD, OWN_COMPILATION = range(2)    # enum
 
 # select which version you have:
 #VERSION = STATIC_BUILD
@@ -83,6 +80,32 @@ if VERSION == OWN_COMPILATION:
     config['audio_codec'] = 'libfdk_aac'
     config['audio_codec_failsafe'] = 'libfaac'
 
+FINGERPRINT = utils.get_short_fingerprint()
+if FINGERPRINT == 'a7e7d4':
+    # on my home desktop I want this to be the default
+    config['threads'] = 4
+
+def check_switches(args):
+    """
+    Process arguments and if there is a switch among them, modify
+    the config part accordingly.
+
+    Return value: argument list without switches.
+    """
+    global config
+    #
+    copy = []
+    for e in args:
+        m = re.search(r'^-threads:(\d+)$', e)
+        if m:
+            config['threads'] = m.group(1)
+        else:
+            copy.append(e)
+    #
+    return copy
+
+sys.argv = check_switches(sys.argv)
+
 command = """{ffmpeg} -i \"%(input)s\" -codec:v libx264 -quality good -cpu-used 0
 -b:v {bitrate} -profile:v baseline -level 30 -y -maxrate 2000k
 -bufsize 2000k -vf scale={width}:{height} -threads {threads} -codec:a %(audio_codec)s
@@ -91,32 +114,17 @@ command = """{ffmpeg} -i \"%(input)s\" -codec:v libx264 -quality good -cpu-used 
 audio_codec_problem = "Warning! There was a problem with the audio codec and the conversion failed. " + \
     "Retrying another method..."
 
-
-class Timer(object):
-
-    def __enter__(self):
-        self.__start = time.time()
-
-    def __exit__(self, type, value, traceback): #@ReservedAssignment
-        # Error handling here
-        self.__finish = time.time()
-
-    def elapsed_time(self):
-        return self.__finish - self.__start
-
-
-def call_and_get_exit_code(cmd):
-    process = Popen(shlex.split(cmd), stdout=PIPE)
-    process.communicate()
-    return process.wait()
+#############################################################################
+##  end of config  ##########################################################
+#############################################################################
 
 
 def frame(fname):
     size = len(fname)
     horizontal = '+'+'-'*(size+2)+'+'
-    print horizontal
-    print '| '+fname+' |'
-    print horizontal
+    print termcolor.colored(horizontal, "green")
+    print termcolor.colored('| '+fname+' |', "green")
+    print termcolor.colored(horizontal, "green")
 
 
 def resize(fname):
@@ -139,7 +147,7 @@ def resize(fname):
     cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec']}
     print termcolor.colored(cmd, "green")
     frame(fname)
-    exit_code = call_and_get_exit_code(cmd)
+    exit_code = utils.call_and_get_exit_code(cmd)
     if exit_code == 0:
         print termcolor.colored("Success!", "green")
         return True
@@ -149,32 +157,12 @@ def resize(fname):
         cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec_failsafe']}
         print termcolor.colored(cmd, "green")
         frame(fname)
-        exit_code = call_and_get_exit_code(cmd)
+        exit_code = utils.call_and_get_exit_code(cmd)
         if exit_code == 0:
             print termcolor.colored("Success!", "green")
             return True
         else:
             return False
-
-
-def check_switches(args):
-    """
-    Process arguments and if there is a switch among them, modify
-    the config part accordingly.
-
-    Return value: argument list without switches.
-    """
-    global config
-    #
-    copy = []
-    for e in args:
-        m = re.search(r'^-threads:(\d+)$', e)
-        if m:
-            config['threads'] = m.group(1)
-        else:
-            copy.append(e)
-    #
-    return copy
 
 
 def main(args):
@@ -186,10 +174,8 @@ def main(args):
     rows = [["Number", "File Name", "Elapsed Time (sec.)"]]
     total_time = 0.0
 
-    args = check_switches(args)
-    #
     for arg in args:
-        timer = Timer()
+        timer = utils.Timer()
         with timer:
             status = resize(arg)
         #
