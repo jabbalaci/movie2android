@@ -45,8 +45,8 @@ Accepted switches:
 """
 
 __author__ = "Laszlo Szathmary (jabba.laci@gmail.com)"
-__version__ = "0.1.3"
-__date__ = "20130318"
+__version__ = "0.1.4"
+__date__ = "20130319"
 __copyright__ = "Copyright (c) 2013 Laszlo Szathmary"
 __license__ = "GPL"
 
@@ -127,13 +127,24 @@ def frame(fname):
     print termcolor.colored(horizontal, "green")
 
 
+class Result(object):
+    def __init__(self, status=True):
+        self.status = status
+        # status (True: OK, False: conversion failed)
+        # file_name (str)
+        # file_size (int)
+        pass
+
+
+
+
 def resize(fname):
     """
     Resize the current video file with ffmpeg.
     """
     if not os.path.isfile(fname):
         print termcolor.colored("Warning: the file {0} doesn't exist!".format(fname), "red")
-        return False
+        return Result(False)
     # else
 
     fileBaseName = os.path.splitext(fname)[0]
@@ -142,27 +153,34 @@ def resize(fname):
         output = "{0}-resized.mp4".format(fileBaseName)
     if os.path.isfile(output):
         print termcolor.colored('Warning: the file {0} exists!'.format(output), "red")
-        return False
+        return Result(False)
+
     # else
+    result = Result()
+
     cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec']}
+    result.file_name = output
     print termcolor.colored(cmd, "green")
     frame(fname)
     exit_code = utils.call_and_get_exit_code(cmd)
     if exit_code == 0:
         print termcolor.colored("Success!", "green")
-        return True
+        result.file_size = os.path.getsize(result.file_name)
+        return result
     else:
         print termcolor.colored(audio_codec_problem, "red")
         os.unlink(output)
         cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec_failsafe']}
+        result.file_name = output
         print termcolor.colored(cmd, "green")
         frame(fname)
         exit_code = utils.call_and_get_exit_code(cmd)
         if exit_code == 0:
             print termcolor.colored("Success!", "green")
-            return True
+            result.file_size = os.path.getsize(result.file_name)
+            return result
         else:
-            return False
+            return Result(False)
 
 
 def main(args):
@@ -170,24 +188,30 @@ def main(args):
     process each argument
     """
     table = Texttable()
-    table.set_cols_align(["r", "r", "r"])
-    rows = [["Number", "File Name", "Elapsed Time (sec.)"]]
+    table.set_cols_align(["r", "r", "r", "r"])
+    rows = [["Number", "File Name", "File Size", "Elapsed Time (sec.)"]]
     total_time = 0.0
+    total_file_size = 0
 
-    for arg in args:
+    for index, arg in enumerate(args, start=1):
         timer = utils.Timer()
         with timer:
-            status = resize(arg)
+            result = resize(arg)
         #
-        rows.append([len(rows), arg, timer.elapsed_time() if status else "failed"])
+        rows.append([index,
+                     result.file_name,
+                     utils.sizeof_fmt(result.file_size),
+                     timer.elapsed_time() if result.status else "failed"])
         #
         t = rows[-1][-1]
         if isinstance(t, float):
             total_time += t
+        total_file_size += result.file_size
 
     table.add_rows(rows)
     print table.draw()
     print 'Total time: {0} (H:MM:SS)'.format(str(datetime.timedelta(seconds=int(round(total_time)))))
+    print 'Total file size:', utils.sizeof_fmt(total_file_size)
 
 #############################################################################
 

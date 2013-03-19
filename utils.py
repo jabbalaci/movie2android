@@ -9,7 +9,6 @@ from subprocess import Popen, PIPE
 
 
 class Timer(object):
-
     def __enter__(self):
         self.__start = time.time()
 
@@ -64,6 +63,16 @@ def call_and_get_exit_code(cmd):
     process = Popen(shlex.split(cmd), stdout=PIPE)
     process.communicate()
     return process.wait()
+
+
+def sizeof_fmt(num):
+    """
+    Convert file size to human readable format.
+    """
+    for x in ['bytes','KB','MB','GB','TB']:
+        if num < 1024.0:
+            return "{0:.2f} {1}".format(num, x)
+        num /= 1024.0
 
 #############################################################################
 
