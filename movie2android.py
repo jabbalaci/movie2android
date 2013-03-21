@@ -45,8 +45,8 @@ Accepted switches:
 """
 
 __author__ = "Laszlo Szathmary (jabba.laci@gmail.com)"
-__version__ = "0.1.4"
-__date__ = "20130319"
+__version__ = "0.1.5"
+__date__ = "20130321"
 __copyright__ = "Copyright (c) 2013 Laszlo Szathmary"
 __license__ = "GPL"
 
@@ -55,10 +55,10 @@ import sys
 import termcolor
 import re
 from texttable import Texttable
-import datetime
 import utils
 
 STATIC_BUILD, OWN_COMPILATION = range(2)    # enum
+FAILED = "failed"
 
 # select which version you have:
 #VERSION = STATIC_BUILD
@@ -118,6 +118,18 @@ audio_codec_problem = "Warning! There was a problem with the audio codec and the
 ##  end of config  ##########################################################
 #############################################################################
 
+class Result(object):
+    """
+    A record to hold information about a converted video file.
+    """
+    def __init__(self, status=True):
+        self.status = status
+        # status (True: OK, False: conversion failed)
+        # file_name (str)
+        # file_size (int)
+        # elapsed_time (float)
+        pass
+
 
 def frame(fname):
     size = len(fname)
@@ -125,17 +137,6 @@ def frame(fname):
     print termcolor.colored(horizontal, "green")
     print termcolor.colored('| '+fname+' |', "green")
     print termcolor.colored(horizontal, "green")
-
-
-class Result(object):
-    def __init__(self, status=True):
-        self.status = status
-        # status (True: OK, False: conversion failed)
-        # file_name (str)
-        # file_size (int)
-        pass
-
-
 
 
 def resize(fname):
@@ -188,8 +189,8 @@ def main(args):
     process each argument
     """
     table = Texttable()
-    table.set_cols_align(["r", "r", "r", "r"])
-    rows = [["Number", "File Name", "File Size", "Elapsed Time (sec.)"]]
+    table.set_cols_align(["r", "r", "r", "r", "r"])
+    rows = [["Number", "File Name", "File Size", "Video Duration (H:MM:SS)", "Conversion Time"]]
     total_time = 0.0
     total_file_size = 0
 
@@ -198,20 +199,21 @@ def main(args):
         with timer:
             result = resize(arg)
         #
+        result.elapsed_time = timer.elapsed_time()
         rows.append([index,
                      result.file_name,
                      utils.sizeof_fmt(result.file_size),
-                     timer.elapsed_time() if result.status else "failed"])
+                     utils.sec_to_hh_mm_ss(utils.get_video_length(result.file_name)),
+                     "{0:.1f} sec.".format(result.elapsed_time) if result.status else FAILED])
         #
-        t = rows[-1][-1]
-        if isinstance(t, float):
-            total_time += t
+        if rows[-1][-1] != FAILED:
+            total_time += result.elapsed_time
         total_file_size += result.file_size
 
     table.add_rows(rows)
     print table.draw()
-    print 'Total time: {0} (H:MM:SS)'.format(str(datetime.timedelta(seconds=int(round(total_time)))))
     print 'Total file size:', utils.sizeof_fmt(total_file_size)
+    print 'Total time: {0} (H:MM:SS)'.format(utils.sec_to_hh_mm_ss(total_time))
 
 #############################################################################
 

@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 
+import re
 import platform as p
 import uuid
 import hashlib
 import time
 import shlex
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
+from datetime import timedelta
+
+video_info = "/usr/bin/mplayer '{0}' -ao null -vo null -frames 1 -identify"
 
 
 class Timer(object):
@@ -74,8 +78,57 @@ def sizeof_fmt(num):
             return "{0:.2f} {1}".format(num, x)
         num /= 1024.0
 
+
+def get_simple_cmd_output(cmd, stderr=STDOUT):
+    """
+    Execute a simple external command and get its output.
+
+    The command contains no pipes. Error messages are
+    redirected to the standard output by default.
+    """
+    args = shlex.split(cmd)
+    return Popen(args, stdout=PIPE, stderr=stderr).communicate()[0]
+
+
+def get_video_info(video_file):
+    """
+    Get info about a video.
+
+    The info is returned by mplayer. The result is a
+    dictionary whose keys start with 'ID_'.
+    """
+    cmd = video_info.format(video_file)
+    output = get_simple_cmd_output(cmd)
+    return dict(re.findall('(ID_.*)=(.*)', output))
+
+
+def get_video_length(video_file):
+    """
+    Get the length of a video in seconds.
+
+    The length is extracted with mplayer.
+    The return value is a real number.
+    """
+    info = get_video_info(video_file)
+    return float(info['ID_LENGTH'])
+
+
+def sec_to_hh_mm_ss(seconds, as_str=True):
+    """
+    Convert a time given in seconds to H:MM:SS format.
+
+    If as_str is True, the return value is a string.
+    If as_str is False, the return value is a tuple (H:MM:SS).
+    """
+    s = str(timedelta(seconds=int(round(seconds))))
+    if as_str:
+        return s
+    else:
+        return tuple([int(x) for x in s.split(':')])
+
 #############################################################################
 
 if __name__ == "__main__":
     print get_fingerprint(True)
     print get_short_fingerprint()
+    print get_video_length("/opt/shared.folder.vbox/video/Keynote_ Guido Van Rossum.mp4")
