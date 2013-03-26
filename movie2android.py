@@ -129,11 +129,17 @@ class Result(object):
         self.elapsed_time = 0.0 # (float)
 
 
-def frame(fname):
-    size = len(fname)
-    horizontal = '+'+'-'*(size+2)+'+'
+def frame(fname, time=True):
+    if time:
+        t = utils.sec_to_hh_mm_ss(utils.get_video_length(fname))
+        s = "{fname}  |  ({time})".format(fname=fname, time=t)
+    else:
+        s = fname
+
+    size = len(s)
+    horizontal = '+' + '-' * (size+2) + '+'
     print termcolor.colored(horizontal, "green")
-    print termcolor.colored('| '+fname+' |', "green")
+    print termcolor.colored('| ' + s + ' |', "green")
     print termcolor.colored(horizontal, "green")
 
 
