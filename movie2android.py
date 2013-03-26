@@ -123,12 +123,10 @@ class Result(object):
     A record to hold information about a converted video file.
     """
     def __init__(self, status=True):
-        self.status = status
-        # status (True: OK, False: conversion failed)
-        # file_name (str)
-        # file_size (int)
-        # elapsed_time (float)
-        pass
+        self.status = status    # True: OK, False: conversion failed
+        self.file_name = None   # (str)
+        self.file_size = 0      # (int)
+        self.elapsed_time = 0.0 # (float)
 
 
 def frame(fname):
@@ -203,7 +201,7 @@ def main(args):
         rows.append([index,
                      result.file_name,
                      utils.sizeof_fmt(result.file_size),
-                     utils.sec_to_hh_mm_ss(utils.get_video_length(result.file_name)),
+                     utils.sec_to_hh_mm_ss(utils.get_video_length(result.file_name)) if result.file_name else "--",
                      "{0:.1f} sec.".format(result.elapsed_time) if result.status else FAILED])
         #
         if rows[-1][-1] != FAILED:
