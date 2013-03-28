@@ -129,12 +129,12 @@ class Result(object):
         self.elapsed_time = 0.0 # (float)
 
 
-def frame(fname, time=True):
-    if time:
-        t = utils.sec_to_hh_mm_ss(utils.get_video_length(fname))
-        s = "{fname}  |  ({time})".format(fname=fname, time=t)
-    else:
-        s = fname
+def frame(fname, size_tuple):
+    index, full_size = size_tuple
+    t = utils.sec_to_hh_mm_ss(utils.get_video_length(fname))
+    s = "({index} of {full_size}) {fname} ({time})".format(
+        index=index, full_size=full_size, fname=fname, time=t
+    )
 
     size = len(s)
     horizontal = '+' + '-' * (size+2) + '+'
@@ -143,7 +143,7 @@ def frame(fname, time=True):
     print termcolor.colored(horizontal, "green")
 
 
-def resize(fname):
+def resize(fname, size_tuple):
     """
     Resize the current video file with ffmpeg.
     """
@@ -162,14 +162,17 @@ def resize(fname):
 
     # else
     result = Result()
+    timer = utils.Timer()
 
     cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec']}
     result.file_name = output
     print termcolor.colored(cmd, "green")
-    frame(fname)
-    exit_code = utils.call_and_get_exit_code(cmd)
+    frame(fname, size_tuple)
+    with timer:
+        exit_code = utils.call_and_get_exit_code(cmd)
     if exit_code == 0:
-        print termcolor.colored("Success!", "green")
+        print termcolor.colored("Success! Conversion time: {0:.1f} sec.".format(timer.elapsed_time()), "green")
+        print '#'
         result.file_size = os.path.getsize(result.file_name)
         return result
     else:
@@ -178,10 +181,12 @@ def resize(fname):
         cmd = command % {'input': fname, 'output': output, 'audio_codec': config['audio_codec_failsafe']}
         result.file_name = output
         print termcolor.colored(cmd, "green")
-        frame(fname)
-        exit_code = utils.call_and_get_exit_code(cmd)
+        frame(fname, size_tuple)
+        with timer:
+            exit_code = utils.call_and_get_exit_code(cmd)
         if exit_code == 0:
-            print termcolor.colored("Success!", "green")
+            print termcolor.colored("Success! Conversion time: {0:.1f} sec.".format(timer.elapsed_time()), "green")
+            print '#'
             result.file_size = os.path.getsize(result.file_name)
             return result
         else:
@@ -201,7 +206,7 @@ def main(args):
     for index, arg in enumerate(args, start=1):
         timer = utils.Timer()
         with timer:
-            result = resize(arg)
+            result = resize(arg, (index, len(args)))
         #
         result.elapsed_time = timer.elapsed_time()
         rows.append([index,
