@@ -223,6 +223,7 @@ def main(args):
     print table.draw()
     print 'Total file size:', utils.sizeof_fmt(total_file_size)
     print 'Total time: {0} (H:MM:SS)'.format(utils.sec_to_hh_mm_ss(total_time))
+    print utils.get_unix_date()
 
 #############################################################################
 

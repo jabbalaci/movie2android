@@ -8,6 +8,7 @@ import time
 import shlex
 from subprocess import Popen, PIPE, STDOUT
 from datetime import timedelta
+from time import strftime
 
 video_info = "/usr/bin/mplayer '{0}' -ao null -vo null -frames 1 -identify"
 
@@ -125,6 +126,13 @@ def sec_to_hh_mm_ss(seconds, as_str=True):
         return s
     else:
         return tuple([int(x) for x in s.split(':')])
+
+
+def get_unix_date():
+    """Same output as Unix's date command.
+
+    Example: Fri Apr  6 14:23:27 CEST 2012"""
+    return strftime("%a %b %e %H:%M:%S %Z %Y")
 
 #############################################################################
 
