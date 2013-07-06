@@ -81,7 +81,7 @@ if VERSION == OWN_COMPILATION:
     config['audio_codec_failsafe'] = 'libfaac'
 
 FINGERPRINT = utils.get_short_fingerprint()
-if FINGERPRINT == 'a7e7d4':
+if FINGERPRINT == 'a804db':
     # on my home desktop I want this to be the default
     config['threads'] = 4
 
