@@ -27,6 +27,14 @@ You can also pass *several* parameters to the script and they
 will be processed one by one in a queue.
 
 
+New (July 2013):
+----------------
+
+From now on you can process files from different directories too.
+This is done via sockets. See the `README.md` file in the 
+`client_server` directory.
+
+
 Contributions:
 --------------
 
